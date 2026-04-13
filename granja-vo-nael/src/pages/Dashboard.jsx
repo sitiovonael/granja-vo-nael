@@ -41,15 +41,26 @@ export default function Dashboard() {
     const [coletaHoje, coletaMes, vendasMes, mortalidadeMes, entregas] = await Promise.all([
       supabase.from('coletas').select('pequeno,grande,extra_grande,jumbo,trincados,perdas').eq('data', today),
       supabase.from('coletas').select('pequeno,grande,extra_grande,jumbo').gte('data', `${thisMonth}-01`),
-      supabase.from('vendas').select('total').gte('data', `${thisMonth}-01`),
+      supabase.from('vendas').select('pequeno,grande,extra_grande,jumbo,tipo_pequeno,tipo_grande,tipo_extra_grande,tipo_jumbo,preco_pequeno,preco_grande,preco_extra_grande,preco_jumbo,frete').gte('data', `${thisMonth}-01`),
       supabase.from('mortalidade').select('quantidade').gte('data', `${thisMonth}-01`),
       supabase.from('entregas').select('id').eq('status', 'pendente'),
     ])
 
+    const MULT = { unidade: 1, cartela12: 12, cartela30: 30 }
+    const CLASSIFS = ['pequeno', 'grande', 'extra_grande', 'jumbo']
+
     const somaOvos = (rows) => rows?.reduce((s, r) => s + r.pequeno + r.grande + r.extra_grande + r.jumbo, 0) ?? 0
     const ovosHoje = somaOvos(coletaHoje.data)
     const ovosMes = somaOvos(coletaMes.data)
-    const totalVendas = vendasMes.data?.reduce((s, r) => s + Number(r.total || 0), 0) ?? 0
+
+    const totalVendas = vendasMes.data?.reduce((s, v) => {
+      const sub = CLASSIFS.reduce((acc, k) => {
+        const mult = MULT[v[`tipo_${k}`]] || 1
+        const cartelas = mult > 0 ? Math.round((v[k] || 0) / mult) : (v[k] || 0)
+        return acc + cartelas * (Number(v[`preco_${k}`]) || 0)
+      }, 0)
+      return s + sub + Number(v.frete || 0)
+    }, 0) ?? 0
     const mortMes = mortalidadeMes.data?.reduce((s, r) => s + r.quantidade, 0) ?? 0
 
     setStats({ ovosHoje, ovosMes, totalVendas, mortMes })
