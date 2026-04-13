@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { Plus, Wheat, DollarSign, Calculator, Save } from 'lucide-react'
+import { Plus, Wheat, DollarSign, Calculator, Save, TrendingUp } from 'lucide-react'
 
 const CATEGORIAS_CUSTO = [
   { value: 'medicamento', label: 'Medicamento' },
@@ -120,6 +120,7 @@ export default function Racao() {
       <div className="flex bg-gray-200 rounded-xl p-1 gap-1 overflow-x-auto">
         {[
           { key: 'calculadora', label: 'Calculadora' },
+          { key: 'precificacao', label: 'Precificação' },
           { key: 'racao', label: 'Ração' },
           { key: 'custos', label: 'Custos' },
           { key: 'config', label: 'Config.' },
@@ -183,6 +184,17 @@ export default function Racao() {
             <SimuladorCompra consumoDiario={consumoDiarioKg} custoPorKg={custoPorKg} />
           </div>
         </div>
+      )}
+
+      {/* PRECIFICAÇÃO */}
+      {tab === 'precificacao' && (
+        <Precificacao
+          totalRacaoMes={totalRacaoMes}
+          totalCustosMes={totalCustosMes}
+          custoFixo={Number(config.custo_fixo_mensal) || 0}
+          racoes={racoes}
+          custos={custos}
+        />
       )}
 
       {/* RAÇÃO */}
@@ -335,6 +347,119 @@ export default function Racao() {
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+function Precificacao({ totalRacaoMes, totalCustosMes, custoFixo }) {
+  const [producaoMensal, setProducaoMensal] = useState('9000')
+  const [margem, setMargem] = useState('30')
+
+  const totalCustos = totalRacaoMes + totalCustosMes + custoFixo
+  const producao = Number(producaoMensal) || 1
+  const custoPorOvo = totalCustos / producao
+  const margemDecimal = (Number(margem) || 0) / 100
+
+  const precoUnidade = custoPorOvo * (1 + margemDecimal)
+  const precoCartela12 = precoUnidade * 12
+  const precoCartela30 = precoUnidade * 30
+
+  return (
+    <div className="space-y-4">
+      {/* Resumo de custos */}
+      <div className="bg-white rounded-2xl shadow p-4 space-y-3">
+        <div className="flex items-center gap-2 mb-1">
+          <TrendingUp size={18} className="text-brand-orange" />
+          <h2 className="font-semibold text-brand-navy">Custos do Mês Atual</h2>
+        </div>
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Ração</span>
+            <span className="font-medium text-gray-800">R$ {totalRacaoMes.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Outros custos</span>
+            <span className="font-medium text-gray-800">R$ {totalCustosMes.toFixed(2)}</span>
+          </div>
+          {custoFixo > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Custo fixo mensal</span>
+              <span className="font-medium text-gray-800">R$ {custoFixo.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between font-bold border-t pt-2 mt-1">
+            <span className="text-brand-navy">Total de custos</span>
+            <span className="text-red-600">R$ {totalCustos.toFixed(2)}</span>
+          </div>
+        </div>
+        {totalCustos === 0 && (
+          <p className="text-xs text-amber-600 bg-amber-50 rounded-xl px-3 py-2">
+            ⚠️ Nenhum custo registrado este mês. Cadastre ração e custos para um cálculo preciso.
+          </p>
+        )}
+      </div>
+
+      {/* Parâmetros */}
+      <div className="bg-white rounded-2xl shadow p-4 space-y-4">
+        <h2 className="font-semibold text-brand-navy">Parâmetros de Precificação</h2>
+        <div>
+          <label className="text-xs text-gray-500 font-medium">Produção mensal estimada (ovos)</label>
+          <input type="number" min="1" value={producaoMensal}
+            onChange={e => setProducaoMensal(e.target.value)}
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm mt-1" />
+          <p className="text-xs text-gray-400 mt-1">Ex: 500 galinhas × 60% postura × 30 dias ≈ 9.000 ovos</p>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 font-medium mb-2 block">Margem de lucro desejada (%)</label>
+          <div className="flex gap-2 mb-2">
+            {['10', '20', '30', '40', '50'].map(m => (
+              <button key={m} type="button" onClick={() => setMargem(m)}
+                className={`flex-1 py-2 rounded-xl text-xs font-medium transition ${margem === m ? 'bg-brand-orange text-white' : 'bg-gray-100 text-gray-600'}`}>
+                {m}%
+              </button>
+            ))}
+          </div>
+          <input type="number" min="0" max="500" value={margem}
+            onChange={e => setMargem(e.target.value)}
+            placeholder="Ou digite outro valor"
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm" />
+        </div>
+      </div>
+
+      {/* Resultado */}
+      <div className="bg-white rounded-2xl shadow p-4 space-y-3">
+        <h2 className="font-semibold text-brand-navy">Preços Mínimos Sugeridos</h2>
+        <div className="bg-brand-navy/5 rounded-xl p-3 flex justify-between items-center">
+          <div>
+            <p className="text-xs text-gray-500">Custo por ovo</p>
+            <p className="font-bold text-brand-navy text-lg">R$ {custoPorOvo.toFixed(4)}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-gray-500">Com {margem}% de margem</p>
+            <p className="font-bold text-green-600 text-lg">R$ {precoUnidade.toFixed(4)}/ovo</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
+            <p className="text-xs text-green-700 font-semibold mb-1">Unidade</p>
+            <p className="text-lg font-bold text-green-800">R$ {precoUnidade.toFixed(2)}</p>
+            <p className="text-xs text-green-600 mt-1">por ovo</p>
+          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
+            <p className="text-xs text-blue-700 font-semibold mb-1">Cartela 12</p>
+            <p className="text-lg font-bold text-blue-800">R$ {precoCartela12.toFixed(2)}</p>
+            <p className="text-xs text-blue-600 mt-1">por cartela</p>
+          </div>
+          <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 text-center">
+            <p className="text-xs text-purple-700 font-semibold mb-1">Cartela 30</p>
+            <p className="text-lg font-bold text-purple-800">R$ {precoCartela30.toFixed(2)}</p>
+            <p className="text-xs text-purple-600 mt-1">por cartela</p>
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 text-center">
+          Baseado em R$ {totalCustos.toFixed(2)} de custos ÷ {Number(producaoMensal).toLocaleString('pt-BR')} ovos
+        </p>
+      </div>
     </div>
   )
 }
