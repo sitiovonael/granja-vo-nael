@@ -86,7 +86,6 @@ export default function Vendas() {
       if (!confirm(`Atenção: a quantidade de ${nomes} ultrapassa o estoque disponível. Deseja continuar mesmo assim?`)) return
     }
     setSaving(true)
-    const subtotal = CLASSIFICACOES.reduce((s, k) => s + (Number(form[k]) || 0) * (Number(form[`preco_${k}`]) || 0), 0)
     const payload = {
       data: form.data,
       cliente_id: form.cliente_id || null,
@@ -103,7 +102,6 @@ export default function Vendas() {
       preco_extra_grande: Number(form.preco_extra_grande) || 0,
       preco_jumbo: Number(form.preco_jumbo) || 0,
       frete: Number(form.frete) || 0,
-      total: subtotal,
       observacoes: form.observacoes || null,
       user_id: user.id,
     }
