@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
@@ -86,6 +87,7 @@ export default function Vendas() {
       if (!confirm(`Atenção: a quantidade de ${nomes} ultrapassa o estoque disponível. Deseja continuar mesmo assim?`)) return
     }
     setSaving(true)
+    const subtotal = CLASSIFICACOES.reduce((s, k) => s + (Number(form[k]) || 0) * (Number(form[`preco_${k}`]) || 0), 0)
     const payload = {
       data: form.data,
       cliente_id: form.cliente_id || null,
@@ -102,6 +104,7 @@ export default function Vendas() {
       preco_extra_grande: Number(form.preco_extra_grande) || 0,
       preco_jumbo: Number(form.preco_jumbo) || 0,
       frete: Number(form.frete) || 0,
+      total: subtotal,
       observacoes: form.observacoes || null,
       user_id: user.id,
     }
@@ -133,9 +136,21 @@ export default function Vendas() {
     loadAll()
   }
 
+  // Calcula o total de uma venda (compatível com registros antigos sem campo total)
+  function calcVendaTotal(v) {
+    if (Number(v.total) > 0) return Number(v.total) + Number(v.frete || 0)
+    // Fallback para registros antigos: recalcula pelos preços e quantidades armazenadas
+    const sub = CLASSIFICACOES.reduce((s, k) => {
+      const mult = tipoMult(v[`tipo_${k}`] || 'unidade')
+      const cartelas = mult > 0 ? Math.round((v[k] || 0) / mult) : (v[k] || 0)
+      return s + cartelas * (Number(v[`preco_${k}`]) || 0)
+    }, 0)
+    return sub + Number(v.frete || 0)
+  }
+
   const totalMes = vendas
     .filter(v => v.data?.startsWith(today.slice(0, 7)))
-    .reduce((s, v) => s + Number(v.total || 0) + Number(v.frete || 0), 0)
+    .reduce((s, v) => s + calcVendaTotal(v), 0)
 
   return (
     <div className="p-4 space-y-4">
@@ -317,7 +332,7 @@ export default function Vendas() {
                   {v.clientes?.nome ?? 'Sem cliente'} {v.clientes?.tipo ? `(${v.clientes.tipo === 'pf' ? 'PF' : 'Empresa'})` : ''}
                 </p>
                 <p className="text-green-600 font-bold text-lg mt-1">
-                  R$ {(Number(v.total || 0) + Number(v.frete || 0)).toFixed(2)}
+                  R$ {calcVendaTotal(v).toFixed(2)}
                   {v.frete > 0 && <span className="text-xs text-gray-400 font-normal ml-1">(+ R$ {Number(v.frete).toFixed(2)} frete)</span>}
                 </p>
               </div>
