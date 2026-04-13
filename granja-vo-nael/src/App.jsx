@@ -9,6 +9,10 @@ import Clientes from './pages/Clientes'
 import Mortalidade from './pages/Mortalidade'
 import Racao from './pages/Racao'
 import Entregas from './pages/Entregas'
+import Lote from './pages/Lote'
+import Relatorio from './pages/Relatorio'
+import ContasReceber from './pages/ContasReceber'
+import Operacional from './pages/Operacional'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -42,6 +46,10 @@ export default function App() {
             <Route path="clientes" element={<Clientes />} />
             <Route path="mortalidade" element={<Mortalidade />} />
             <Route path="entregas" element={<Entregas />} />
+            <Route path="lotes" element={<Lote />} />
+            <Route path="relatorio" element={<Relatorio />} />
+            <Route path="contas" element={<ContasReceber />} />
+            <Route path="operacional" element={<Operacional />} />
             <Route path="racao" element={<AdminRoute><Racao /></AdminRoute>} />
           </Route>
         </Routes>
