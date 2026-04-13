@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
@@ -108,7 +107,13 @@ export default function Vendas() {
       observacoes: form.observacoes || null,
       user_id: user.id,
     }
-    const { data: venda } = await supabase.from('vendas').insert(payload).select().single()
+    const { data: venda, error } = await supabase.from('vendas').insert(payload).select().single()
+
+    if (error) {
+      alert('Erro ao salvar venda: ' + error.message)
+      setSaving(false)
+      return
+    }
 
     if (addEntrega && venda) {
       await supabase.from('entregas').insert({
