@@ -19,10 +19,22 @@ export default function ContasReceber() {
   async function loadVendas() {
     const { data } = await supabase
       .from('vendas')
-      .select('*, clientes(nome)')
+      .select('*, clientes(nome), pequeno, grande, extra_grande, jumbo, tipo_pequeno, tipo_grande, tipo_extra_grande, tipo_jumbo, preco_pequeno, preco_grande, preco_extra_grande, preco_jumbo')
       .order('data_vencimento', { ascending: true, nullsFirst: false })
       .order('data', { ascending: false })
     setVendas(data || [])
+  }
+
+  const CLASSIFS = ['pequeno', 'grande', 'extra_grande', 'jumbo']
+  const MULT = { unidade: 1, cartela12: 12, cartela30: 30 }
+
+  function calcTotal(v) {
+    const sub = CLASSIFS.reduce((s, k) => {
+      const mult = MULT[v[`tipo_${k}`]] || 1
+      const cartelas = mult > 0 ? Math.round((v[k] || 0) / mult) : (v[k] || 0)
+      return s + cartelas * (Number(v[`preco_${k}`]) || 0)
+    }, 0)
+    return sub + Number(v.frete || 0)
   }
 
   async function marcarPago(id) {
@@ -48,11 +60,11 @@ export default function ContasReceber() {
 
   const totalPendente = vendas
     .filter(v => statusPagamento(v).label !== 'Pago')
-    .reduce((s, v) => s + Number(v.total || 0) + Number(v.frete || 0), 0)
+    .reduce((s, v) => s + calcTotal(v), 0)
 
   const totalAtrasado = vendas
     .filter(v => statusPagamento(v).label === 'Atrasado')
-    .reduce((s, v) => s + Number(v.total || 0) + Number(v.frete || 0), 0)
+    .reduce((s, v) => s + calcTotal(v), 0)
 
   return (
     <div className="p-4 space-y-4">
@@ -88,7 +100,7 @@ export default function ContasReceber() {
         {todas.map(v => {
           const st = statusPagamento(v)
           const StIcon = st.icon
-          const total = Number(v.total || 0) + Number(v.frete || 0)
+          const total = calcTotal(v)
           return (
             <div key={v.id} className="bg-white rounded-2xl shadow p-4 space-y-3">
               <div className="flex items-start justify-between">
