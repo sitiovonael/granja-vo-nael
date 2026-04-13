@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
@@ -68,9 +67,10 @@ export default function Vendas() {
     return (Number(form[k]) || 0) * tipoMult(tipo)
   }
 
+  // Total = quantidade de cartelas/unidades × preço por cartela/unidade
   function calcTotal() {
-    const ovos = CLASSIFICACOES.reduce((s, k) => s + qtdEmOvos(k) * (Number(form[`preco_${k}`]) || 0), 0)
-    return ovos + (Number(form.frete) || 0)
+    const subtotal = CLASSIFICACOES.reduce((s, k) => s + (Number(form[k]) || 0) * (Number(form[`preco_${k}`]) || 0), 0)
+    return subtotal + (Number(form.frete) || 0)
   }
 
   // Alertas onde ovos calculados superam estoque
@@ -211,7 +211,7 @@ export default function Vendas() {
                       </div>
                     </div>
                     {qtdOvos > 0 && (
-                      <p className="text-xs text-gray-400">= {qtdOvos} ovos · R$ {(qtdOvos * (Number(form[`preco_${k}`]) || 0)).toFixed(2)}</p>
+                      <p className="text-xs text-gray-400">= {qtdOvos} ovos · R$ {((Number(form[k]) || 0) * (Number(form[`preco_${k}`]) || 0)).toFixed(2)}</p>
                     )}
                   </div>
                 )
