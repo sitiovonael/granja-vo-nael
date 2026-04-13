@@ -139,10 +139,9 @@ export default function Vendas() {
     loadAll()
   }
 
-  // Calcula o total de uma venda (compatível com registros antigos sem campo total)
+  // Calcula o total de uma venda a partir de cartelas × preço
+  // (ignora v.total do banco pois ele multiplica ovos × preço, não cartelas × preço)
   function calcVendaTotal(v) {
-    if (Number(v.total) > 0) return Number(v.total) + Number(v.frete || 0)
-    // Fallback para registros antigos: recalcula pelos preços e quantidades armazenadas
     const sub = CLASSIFICACOES.reduce((s, k) => {
       const mult = tipoMult(v[`tipo_${k}`] || 'unidade')
       const cartelas = mult > 0 ? Math.round((v[k] || 0) / mult) : (v[k] || 0)
