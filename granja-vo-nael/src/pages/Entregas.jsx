@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useAuth } from '../contexts/AuthContext'
-import { Truck, CheckCircle, Clock, Navigation, XCircle } from 'lucide-react'
+import { CheckCircle, Clock, Navigation, XCircle, MapPin, MessageCircle, Truck, Calendar } from 'lucide-react'
 
 const STATUS = [
   { value: 'pendente', label: 'Pendente', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
@@ -10,52 +9,155 @@ const STATUS = [
   { value: 'cancelada', label: 'Cancelada', color: 'bg-red-100 text-red-700', icon: XCircle },
 ]
 
+const CLASSIFICACOES = ['pequeno', 'grande', 'extra_grande', 'jumbo']
+const MULT = { unidade: 1, cartela12: 12, cartela30: 30 }
+const today = new Date().toISOString().split('T')[0]
+
 export default function Entregas() {
-  const { isAdmin } = useAuth()
   const [entregas, setEntregas] = useState([])
-  const [filtro, setFiltro] = useState('pendente')
+  const [filtro, setFiltro] = useState('hoje')
+  const [telefonePai, setTelefonePai] = useState('')
 
-  useEffect(() => { loadEntregas() }, [])
+  useEffect(() => { loadAll() }, [])
 
-  async function loadEntregas() {
-    const { data } = await supabase
-      .from('entregas')
-      .select('*, vendas(data, total, clientes(nome))')
-      .order('created_at', { ascending: false })
-      .limit(50)
-    setEntregas(data || [])
+  async function loadAll() {
+    const [e, cfg] = await Promise.all([
+      supabase.from('entregas')
+        .select('*, vendas(data, total, frete, pequeno, grande, extra_grande, jumbo, tipo_pequeno, tipo_grande, tipo_extra_grande, tipo_jumbo, preco_pequeno, preco_grande, preco_extra_grande, preco_jumbo, clientes(nome, endereco))')
+        .order('data_prevista', { ascending: true })
+        .order('hora_prevista', { ascending: true })
+        .limit(60),
+      supabase.from('configuracoes').select('telefone_pai').eq('id', 1).single(),
+    ])
+    setEntregas(e.data || [])
+    if (cfg.data?.telefone_pai) setTelefonePai(cfg.data.telefone_pai)
+  }
+
+  function calcValorVenda(v) {
+    if (!v) return 0
+    const sub = CLASSIFICACOES.reduce((s, k) => {
+      const mult = MULT[v[`tipo_${k}`]] || 1
+      const cartelas = mult > 0 ? Math.round((v[k] || 0) / mult) : (v[k] || 0)
+      return s + cartelas * (Number(v[`preco_${k}`]) || 0)
+    }, 0)
+    return sub + Number(v.frete || 0)
   }
 
   async function updateStatus(id, status) {
     const update = { status }
-    if (status === 'entregue') update.data_entrega = new Date().toISOString().split('T')[0]
+    if (status === 'entregue') update.data_entrega = today
     await supabase.from('entregas').update(update).eq('id', id)
-    loadEntregas()
+    loadAll()
   }
 
-  async function updateEndereco(id, endereco) {
-    await supabase.from('entregas').update({ endereco }).eq('id', id)
+  function enviarWhatsApp() {
+    const entregasHoje = entregas.filter(e =>
+      e.data_prevista === today && e.status !== 'cancelada' && e.status !== 'entregue'
+    )
+
+    if (entregasHoje.length === 0) {
+      alert('Nenhuma entrega pendente para hoje.')
+      return
+    }
+
+    const linhas = entregasHoje.map((e, i) => {
+      const hora = e.hora_prevista ? ` às ${e.hora_prevista}` : ''
+      const cliente = e.vendas?.clientes?.nome ?? 'Sem cliente'
+      const endereco = e.endereco ?? e.vendas?.clientes?.endereco ?? 'Sem endereço'
+      const valor = calcValorVenda(e.vendas)
+      return `${i + 1}. ${cliente}${hora}\n   📍 ${endereco}\n   💰 R$ ${valor.toFixed(2)}`
+    }).join('\n\n')
+
+    const msg = `🐔 *Entregas de hoje - ${new Date().toLocaleDateString('pt-BR')}*\n\n${linhas}\n\nTotal: ${entregasHoje.length} entrega(s)`
+    const encoded = encodeURIComponent(msg)
+    const numero = telefonePai.replace(/\D/g, '')
+    const url = numero
+      ? `https://wa.me/55${numero}?text=${encoded}`
+      : `https://wa.me/?text=${encoded}`
+    window.open(url, '_blank')
   }
 
-  const filtradas = filtro === 'todas' ? entregas : entregas.filter(e => e.status === filtro)
+  // Agrupamentos
+  const entregasHoje = entregas.filter(e => e.data_prevista === today)
+  const hojeAtivas = entregasHoje.filter(e => !['cancelada', 'entregue'].includes(e.status))
+  const hoje_pendentes = entregasHoje.filter(e => e.status === 'pendente').length
+  const hoje_em_rota = entregasHoje.filter(e => e.status === 'em_rota').length
+  const hoje_entregues = entregasHoje.filter(e => e.status === 'entregue').length
+  const totalHoje = entregasHoje.reduce((s, e) => s + calcValorVenda(e.vendas), 0)
+
+  const filtradas =
+    filtro === 'hoje' ? entregasHoje :
+    filtro === 'todas' ? entregas :
+    entregas.filter(e => e.status === filtro)
+
+  const FILTROS = [
+    { key: 'hoje', label: `Hoje${hojeAtivas.length > 0 ? ` (${hojeAtivas.length})` : ''}` },
+    { key: 'pendente', label: 'Pendente' },
+    { key: 'em_rota', label: 'Em Rota' },
+    { key: 'entregue', label: 'Entregue' },
+    { key: 'todas', label: 'Todas' },
+  ]
 
   return (
     <div className="p-4 space-y-4">
-      <div>
-        <h1 className="text-brand-navy text-xl font-bold">Entregas</h1>
-        <p className="text-sm text-gray-500">
-          {entregas.filter(e => e.status === 'pendente').length} pendentes ·{' '}
-          {entregas.filter(e => e.status === 'em_rota').length} em rota
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-brand-navy text-xl font-bold">Entregas</h1>
+          <p className="text-sm text-gray-500">
+            {entregas.filter(e => e.status === 'pendente').length} pendentes ·{' '}
+            {entregas.filter(e => e.status === 'em_rota').length} em rota
+          </p>
+        </div>
       </div>
+
+      {/* Banner do dia */}
+      {filtro === 'hoje' && (
+        <div className="bg-brand-navy rounded-2xl p-4 text-white space-y-3">
+          <div className="flex items-center gap-2">
+            <Calendar size={16} className="text-brand-orange" />
+            <p className="font-semibold text-sm">Hoje — {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-yellow-500/20 rounded-xl p-2 text-center">
+              <p className="text-yellow-300 text-xs font-medium">Pendentes</p>
+              <p className="text-white font-bold text-xl">{hoje_pendentes}</p>
+            </div>
+            <div className="bg-blue-500/20 rounded-xl p-2 text-center">
+              <p className="text-blue-300 text-xs font-medium">Em Rota</p>
+              <p className="text-white font-bold text-xl">{hoje_em_rota}</p>
+            </div>
+            <div className="bg-green-500/20 rounded-xl p-2 text-center">
+              <p className="text-green-300 text-xs font-medium">Entregues</p>
+              <p className="text-white font-bold text-xl">{hoje_entregues}</p>
+            </div>
+          </div>
+
+          {totalHoje > 0 && (
+            <p className="text-xs text-gray-300 text-center">
+              Total do dia: <span className="text-brand-orange font-bold text-sm">R$ {totalHoje.toFixed(2)}</span>
+            </p>
+          )}
+
+          {/* Botão WhatsApp destacado */}
+          <button onClick={enviarWhatsApp}
+            className="w-full bg-green-500 hover:bg-green-600 text-white rounded-xl py-3 flex items-center justify-center gap-2 font-semibold text-sm transition">
+            <MessageCircle size={18} />
+            Enviar resumo para Carlos no WhatsApp
+            {hojeAtivas.length > 0 && (
+              <span className="bg-white/20 rounded-full px-2 py-0.5 text-xs">{hojeAtivas.length}</span>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {['pendente', 'em_rota', 'entregue', 'todas'].map(f => (
-          <button key={f} onClick={() => setFiltro(f)}
+        {FILTROS.map(f => (
+          <button key={f.key} onClick={() => setFiltro(f.key)}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition
-            ${filtro === f ? 'bg-brand-navy text-white' : 'bg-white text-gray-600 border border-gray-200'}`}>
-            {f === 'todas' ? 'Todas' : STATUS.find(s => s.value === f)?.label}
+            ${filtro === f.key ? 'bg-brand-navy text-white' : 'bg-white text-gray-600 border border-gray-200'}`}>
+            {f.label}
           </button>
         ))}
       </div>
@@ -64,22 +166,22 @@ export default function Entregas() {
         {filtradas.map(e => {
           const statusInfo = STATUS.find(s => s.value === e.status)
           const StatusIcon = statusInfo?.icon ?? Clock
+          const endereco = e.endereco ?? e.vendas?.clientes?.endereco
+          const valor = calcValorVenda(e.vendas)
+          const isHoje = e.data_prevista === today
+
           return (
-            <div key={e.id} className="bg-white rounded-2xl shadow p-4 space-y-3">
+            <div key={e.id} className={`bg-white rounded-2xl shadow p-4 space-y-3 ${isHoje && ['pendente','em_rota'].includes(e.status) ? 'border-2 border-brand-orange' : ''}`}>
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-semibold text-brand-navy text-sm">
                     {e.vendas?.clientes?.nome ?? 'Sem cliente'}
                   </p>
                   <p className="text-xs text-gray-400">
-                    Venda: {e.vendas?.data ? new Date(e.vendas.data + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
-                    {e.vendas?.total ? ` · R$ ${Number(e.vendas.total).toFixed(2)}` : ''}
+                    {e.data_prevista ? new Date(e.data_prevista + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}
+                    {e.hora_prevista ? ` às ${e.hora_prevista}` : ''}
                   </p>
-                  {e.data_prevista && (
-                    <p className="text-xs text-gray-400">
-                      Prev: {new Date(e.data_prevista + 'T12:00:00').toLocaleDateString('pt-BR')}
-                    </p>
-                  )}
+                  {valor > 0 && <p className="text-xs text-green-600 font-medium mt-0.5">R$ {valor.toFixed(2)}</p>}
                 </div>
                 <span className={`flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-medium ${statusInfo?.color}`}>
                   <StatusIcon size={12} />
@@ -87,11 +189,13 @@ export default function Entregas() {
                 </span>
               </div>
 
-              {e.endereco && (
-                <p className="text-xs text-gray-500 bg-gray-50 rounded-xl px-3 py-2">{e.endereco}</p>
+              {endereco && (
+                <div className="flex items-start gap-2 bg-gray-50 rounded-xl px-3 py-2">
+                  <MapPin size={14} className="text-brand-orange mt-0.5 shrink-0" />
+                  <p className="text-xs text-gray-600">{endereco}</p>
+                </div>
               )}
 
-              {/* Ações de status */}
               {e.status === 'pendente' && (
                 <div className="flex gap-2">
                   <button onClick={() => updateStatus(e.id, 'em_rota')}
@@ -121,7 +225,9 @@ export default function Entregas() {
         {filtradas.length === 0 && (
           <div className="text-center py-12 text-gray-400">
             <Truck size={40} className="mx-auto mb-2 opacity-30" />
-            <p>Nenhuma entrega {filtro !== 'todas' ? `com status "${STATUS.find(s => s.value === filtro)?.label}"` : ''}</p>
+            <p className="text-sm">
+              {filtro === 'hoje' ? 'Nenhuma entrega agendada para hoje' : 'Nenhuma entrega encontrada'}
+            </p>
           </div>
         )}
       </div>
