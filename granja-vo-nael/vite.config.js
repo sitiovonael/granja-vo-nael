@@ -7,6 +7,16 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+            handler: 'NetworkFirst',
+            options: { cacheName: 'supabase-cache', expiration: { maxAgeSeconds: 86400 } }
+          }
+        ]
+      },
       manifest: {
         name: 'Granja Vô Nael',
         short_name: 'Granja Nael',
