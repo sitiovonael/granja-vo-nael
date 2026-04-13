@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { Plus, Bird, TrendingDown, TrendingUp, Minus, Syringe, Bug } from 'lucide-react'
+import { Plus, Bird, TrendingDown, TrendingUp, Minus, Syringe, Bug, Trash2 } from 'lucide-react'
 
 const today = new Date().toISOString().split('T')[0]
 
@@ -88,6 +88,14 @@ export default function Lote() {
     await supabase.from('lotes').update({ ativo: !ativo }).eq('id', id); loadAll()
   }
 
+  async function deleteLote(id) {
+    if (!confirm('Excluir este lote? As vacinações e doenças vinculadas também serão removidas.')) return
+    await supabase.from('vacinacoes').delete().eq('lote_id', id)
+    await supabase.from('doencas').delete().eq('lote_id', id)
+    await supabase.from('lotes').delete().eq('id', id)
+    loadAll()
+  }
+
   // Próximas vacinas
   const proximasVacinas = vacinacoes
     .filter(v => v.proxima_dose && v.proxima_dose >= today)
@@ -164,7 +172,10 @@ export default function Lote() {
                       <p className="font-semibold text-brand-navy">{l.nome}</p>
                       <p className="text-xs text-gray-500">{l.quantidade} galinhas{l.raca ? ` · ${l.raca}` : ''}</p>
                     </div>
-                    <button onClick={() => toggleAtivo(l.id, l.ativo)} className={`text-xs px-2 py-1 rounded-lg font-medium ${l.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{l.ativo ? 'Ativo' : 'Inativo'}</button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => toggleAtivo(l.id, l.ativo)} className={`text-xs px-2 py-1 rounded-lg font-medium ${l.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{l.ativo ? 'Ativo' : 'Inativo'}</button>
+                      <button onClick={() => deleteLote(l.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={16} /></button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="bg-gray-50 rounded-xl p-2"><p className="text-gray-400">Idade</p><p className="font-semibold text-gray-700">{idadeTexto(l.data_nascimento, l.data_entrada)}</p></div>
