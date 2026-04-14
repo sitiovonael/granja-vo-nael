@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { Plus, Droplets, TrendingUp, AlertTriangle } from 'lucide-react'
+import { Plus, Droplets, TrendingUp, AlertTriangle, Trash2 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const today = new Date().toISOString().split('T')[0]
@@ -43,6 +43,16 @@ export default function Operacional() {
     setShowForm(false)
     setSaving(false)
     loadAll()
+  }
+
+  async function deleteAgua(id) {
+    if (!confirm('Apagar este registro de água?')) return
+    await supabase.from('agua').delete().eq('id', id); loadAll()
+  }
+
+  async function deletePreco(id) {
+    if (!confirm('Apagar este registro de preço?')) return
+    await supabase.from('precos').delete().eq('id', id); loadAll()
   }
 
   async function savePreco(e) {
@@ -175,7 +185,10 @@ export default function Operacional() {
                     {a.observacoes && <p className="text-xs text-gray-400">{a.observacoes}</p>}
                   </div>
                 </div>
-                <p className="text-xs text-gray-400">{new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-gray-400">{new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                  <button onClick={() => deleteAgua(a.id)} className="text-red-300 hover:text-red-500 p-1"><Trash2 size={14} /></button>
+                </div>
               </div>
             ))}
             {aguas.length === 0 && <div className="text-center py-10 text-gray-400"><Droplets size={36} className="mx-auto mb-2 opacity-30" /><p>Nenhum registro de água</p></div>}
@@ -252,6 +265,7 @@ export default function Operacional() {
               <div key={p.id} className="bg-white rounded-2xl shadow p-3">
                 <div className="flex justify-between items-center mb-2">
                   <p className="text-xs text-gray-400">{new Date(p.data + 'T12:00:00').toLocaleDateString('pt-BR')} · {TIPOS_EMBALAGEM.find(t => t.value === p.tipo)?.label}</p>
+                  <button onClick={() => deletePreco(p.id)} className="text-red-300 hover:text-red-500 p-1"><Trash2 size={14} /></button>
                 </div>
                 <div className="grid grid-cols-4 gap-2 text-center">
                   {CLASSIFICACOES.map(k => p[k] > 0 && (
