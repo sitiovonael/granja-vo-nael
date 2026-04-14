@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { Plus, Wheat, DollarSign, Calculator, Save, TrendingUp } from 'lucide-react'
+import { Plus, Wheat, DollarSign, Calculator, Save, TrendingUp, Trash2 } from 'lucide-react'
 
 const CATEGORIAS_CUSTO = [
   { value: 'medicamento', label: 'Medicamento' },
@@ -50,6 +50,16 @@ export default function Racao() {
     }).eq('id', 1)
     setSavingConfig(false)
     alert('Configurações salvas!')
+  }
+
+  async function deleteRacao(id) {
+    if (!confirm('Apagar este registro de ração?')) return
+    await supabase.from('racao').delete().eq('id', id); loadAll()
+  }
+
+  async function deleteCusto(id) {
+    if (!confirm('Apagar este custo?')) return
+    await supabase.from('custos').delete().eq('id', id); loadAll()
   }
 
   async function handleSaveRacao(e) {
@@ -243,13 +253,16 @@ export default function Racao() {
           )}
           <div className="space-y-3">
             {racoes.map(r => (
-              <div key={r.id} className="bg-white rounded-2xl shadow p-4 flex justify-between">
+              <div key={r.id} className="bg-white rounded-2xl shadow p-4 flex justify-between items-start">
                 <div>
                   <p className="font-semibold text-brand-navy text-sm">{r.tipo}</p>
                   <p className="text-xs text-gray-400">{new Date(r.data + 'T12:00:00').toLocaleDateString('pt-BR')}{r.fornecedor ? ` · ${r.fornecedor}` : ''}</p>
                   <p className="text-sm text-gray-600 mt-1">{r.quantidade_kg} kg · R$ {(r.custo_total / r.quantidade_kg).toFixed(2)}/kg</p>
                 </div>
-                <p className="text-amber-600 font-bold">R$ {Number(r.custo_total).toFixed(2)}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-amber-600 font-bold">R$ {Number(r.custo_total).toFixed(2)}</p>
+                  <button onClick={() => deleteRacao(r.id)} className="text-red-300 hover:text-red-500 p-1"><Trash2 size={15} /></button>
+                </div>
               </div>
             ))}
             {racoes.length === 0 && <div className="text-center py-10 text-gray-400"><Wheat size={36} className="mx-auto mb-2 opacity-30" /><p>Nenhum registro</p></div>}
@@ -298,7 +311,7 @@ export default function Racao() {
           )}
           <div className="space-y-3">
             {custos.map(c => (
-              <div key={c.id} className="bg-white rounded-2xl shadow p-4 flex justify-between">
+              <div key={c.id} className="bg-white rounded-2xl shadow p-4 flex justify-between items-start">
                 <div>
                   <p className="font-semibold text-brand-navy text-sm">{c.descricao}</p>
                   <p className="text-xs text-gray-400">{new Date(c.data + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
@@ -306,7 +319,10 @@ export default function Racao() {
                     {CATEGORIAS_CUSTO.find(k => k.value === c.categoria)?.label}
                   </span>
                 </div>
-                <p className="text-red-600 font-bold">R$ {Number(c.valor).toFixed(2)}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-red-600 font-bold">R$ {Number(c.valor).toFixed(2)}</p>
+                  <button onClick={() => deleteCusto(c.id)} className="text-red-300 hover:text-red-500 p-1"><Trash2 size={15} /></button>
+                </div>
               </div>
             ))}
             {custos.length === 0 && <div className="text-center py-10 text-gray-400"><DollarSign size={36} className="mx-auto mb-2 opacity-30" /><p>Nenhum custo</p></div>}
