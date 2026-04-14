@@ -12,6 +12,7 @@ export default function Relatorio() {
   const [clientesFreq, setClientesFreq] = useState([])
   const [loading, setLoading] = useState(true)
   const [config, setConfig] = useState({ custo_fixo_mensal: 0 })
+  const [debug, setDebug] = useState(null)
 
   useEffect(() => { loadDados() }, [mes])
 
@@ -22,15 +23,29 @@ export default function Relatorio() {
 
     const [coletas, vendas, mortalidade, racao, custos, cfg, todasVendas] = await Promise.all([
       supabase.from('coletas').select('*').gte('data', inicio).lte('data', fim),
-      supabase.from('vendas').select('*, clientes(nome,tipo), pequeno, grande, extra_grande, jumbo, tipo_pequeno, tipo_grande, tipo_extra_grande, tipo_jumbo, preco_pequeno, preco_grande, preco_extra_grande, preco_jumbo').gte('data', inicio).lte('data', fim),
+      supabase.from('vendas').select('*, clientes(nome,tipo)').gte('data', inicio).lte('data', fim),
       supabase.from('mortalidade').select('*').gte('data', inicio).lte('data', fim),
       supabase.from('racao').select('*').gte('data', inicio).lte('data', fim),
       supabase.from('custos').select('*').gte('data', inicio).lte('data', fim),
       supabase.from('configuracoes').select('*').eq('id', 1).single(),
-      supabase.from('vendas').select('data, frete, pequeno, grande, extra_grande, jumbo, tipo_pequeno, tipo_grande, tipo_extra_grande, tipo_jumbo, preco_pequeno, preco_grande, preco_extra_grande, preco_jumbo, clientes(nome)').order('data', { ascending: false }),
+      supabase.from('vendas').select('*, clientes(nome)').order('data', { ascending: false }),
     ])
 
     if (cfg.data) setConfig(cfg.data)
+
+    // DEBUG — remover depois
+    console.log('=== RELATÓRIO DEBUG ===')
+    console.log('periodo:', inicio, 'a', fim)
+    console.log('vendas.data:', vendas.data)
+    console.log('vendas.error:', vendas.error)
+    console.log('coletas.data:', coletas.data)
+    console.log('coletas.error:', coletas.error)
+    setDebug({
+      vendasQtd: vendas.data?.length ?? 'ERRO',
+      vendasErro: vendas.error?.message ?? null,
+      coletasQtd: coletas.data?.length ?? 'ERRO',
+      primVenda: vendas.data?.[0] ? JSON.stringify(vendas.data[0]).slice(0, 200) : null,
+    })
 
     const MULT = { unidade: 1, cartela12: 12, cartela30: 30 }
     const CLASSIFS = ['pequeno', 'grande', 'extra_grande', 'jumbo']
@@ -89,7 +104,7 @@ export default function Relatorio() {
       const ini = `${y}-${m}-01`
       const fim2 = new Date(y, d.getMonth() + 1, 0).toISOString().split('T')[0]
       const [cv, cc, cr, ccu] = await Promise.all([
-        supabase.from('vendas').select('frete,pequeno,grande,extra_grande,jumbo,tipo_pequeno,tipo_grande,tipo_extra_grande,tipo_jumbo,preco_pequeno,preco_grande,preco_extra_grande,preco_jumbo').gte('data', ini).lte('data', fim2),
+        supabase.from('vendas').select('*').gte('data', ini).lte('data', fim2),
         supabase.from('coletas').select('pequeno,grande,extra_grande,jumbo').gte('data', ini).lte('data', fim2),
         supabase.from('racao').select('custo_total').gte('data', ini).lte('data', fim2),
         supabase.from('custos').select('valor').gte('data', ini).lte('data', fim2),
@@ -133,6 +148,17 @@ export default function Relatorio() {
         <input type="month" value={mes} onChange={e => setMes(e.target.value)}
           className="mt-2 border border-gray-300 rounded-xl px-3 py-2 text-sm bg-white" />
       </div>
+
+      {/* DEBUG TEMPORÁRIO */}
+      {debug && (
+        <div className="bg-yellow-50 border border-yellow-300 rounded-2xl p-3 text-xs space-y-1">
+          <p className="font-bold text-yellow-800">🔍 Debug (temporário)</p>
+          <p>Vendas carregadas: <strong>{debug.vendasQtd}</strong></p>
+          {debug.vendasErro && <p className="text-red-600">Erro vendas: {debug.vendasErro}</p>}
+          <p>Coletas carregadas: <strong>{debug.coletasQtd}</strong></p>
+          {debug.primVenda && <p className="break-all text-gray-500">1ª venda: {debug.primVenda}</p>}
+        </div>
+      )}
 
       {/* Resultado */}
       <div className="bg-brand-orange text-white rounded-2xl p-4 col-span-2">
