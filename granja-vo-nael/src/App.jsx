@@ -14,6 +14,7 @@ import Relatorio from './pages/Relatorio'
 import ContasReceber from './pages/ContasReceber'
 import Operacional from './pages/Operacional'
 import Preparacao from './pages/Preparacao'
+import Usuarios from './pages/Usuarios'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="contas" element={<AdminRoute><ContasReceber /></AdminRoute>} />
             <Route path="operacional" element={<AdminRoute><Operacional /></AdminRoute>} />
             <Route path="racao" element={<AdminRoute><Racao /></AdminRoute>} />
+            <Route path="usuarios" element={<AdminRoute><Usuarios /></AdminRoute>} />
           </Route>
         </Routes>
       </AuthProvider>
