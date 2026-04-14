@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { Plus, Skull, AlertTriangle, Camera } from 'lucide-react'
+import { Plus, Skull, AlertTriangle, Camera, Trash2 } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 const CAUSAS = [
@@ -38,6 +38,12 @@ export default function Mortalidade() {
     if (!file) return
     setFotoFile(file)
     setFotoPreview(URL.createObjectURL(file))
+  }
+
+  async function handleDelete(id) {
+    if (!confirm('Apagar este registro?')) return
+    await supabase.from('mortalidade').delete().eq('id', id)
+    loadRegistros()
   }
 
   async function handleSave(e) {
@@ -190,9 +196,14 @@ export default function Mortalidade() {
                 <Skull size={16} style={{ color: causa?.color }} />
               </div>
               <div className="flex-1">
-                <div className="flex justify-between">
-                  <p className="font-semibold text-sm text-brand-navy">{r.quantidade} {r.quantidade === 1 ? 'ave' : 'aves'}</p>
-                  <p className="text-xs text-gray-400">{new Date(r.data + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-semibold text-sm text-brand-navy">{r.quantidade} {r.quantidade === 1 ? 'ave' : 'aves'}</p>
+                    <p className="text-xs text-gray-400">{new Date(r.data + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                  </div>
+                  <button onClick={() => handleDelete(r.id)} className="text-red-300 hover:text-red-500 p-1 -mt-1">
+                    <Trash2 size={15} />
+                  </button>
                 </div>
                 <span className="inline-block text-xs px-2 py-0.5 rounded-full font-medium mt-1" style={{ backgroundColor: causa?.color + '20', color: causa?.color }}>{causa?.label}</span>
                 {r.descricao && <p className="text-xs text-gray-400 mt-1">{r.descricao}</p>}
