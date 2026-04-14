@@ -22,19 +22,30 @@ export default function Relatorio() {
 
     const [coletas, vendas, mortalidade, racao, custos, cfg, todasVendas] = await Promise.all([
       supabase.from('coletas').select('*').gte('data', inicio).lte('data', fim),
-      supabase.from('vendas').select('*, clientes(nome,tipo)').gte('data', inicio).lte('data', fim),
+      supabase.from('vendas').select('*, clientes(nome,tipo), pequeno, grande, extra_grande, jumbo, tipo_pequeno, tipo_grande, tipo_extra_grande, tipo_jumbo, preco_pequeno, preco_grande, preco_extra_grande, preco_jumbo').gte('data', inicio).lte('data', fim),
       supabase.from('mortalidade').select('*').gte('data', inicio).lte('data', fim),
       supabase.from('racao').select('*').gte('data', inicio).lte('data', fim),
       supabase.from('custos').select('*').gte('data', inicio).lte('data', fim),
       supabase.from('configuracoes').select('*').eq('id', 1).single(),
-      supabase.from('vendas').select('data, total, frete, clientes(nome)').order('data', { ascending: false }),
+      supabase.from('vendas').select('data, frete, pequeno, grande, extra_grande, jumbo, tipo_pequeno, tipo_grande, tipo_extra_grande, tipo_jumbo, preco_pequeno, preco_grande, preco_extra_grande, preco_jumbo, clientes(nome)').order('data', { ascending: false }),
     ])
 
     if (cfg.data) setConfig(cfg.data)
 
+    const MULT = { unidade: 1, cartela12: 12, cartela30: 30 }
+    const CLASSIFS = ['pequeno', 'grande', 'extra_grande', 'jumbo']
+    function calcVendaReceita(v) {
+      const sub = CLASSIFS.reduce((s, k) => {
+        const mult = MULT[v[`tipo_${k}`]] || 1
+        const cartelas = mult > 0 ? Math.round((v[k] || 0) / mult) : (v[k] || 0)
+        return s + cartelas * (Number(v[`preco_${k}`]) || 0)
+      }, 0)
+      return sub + Number(v.frete || 0)
+    }
+
     const totalOvos = (coletas.data || []).reduce((s, r) => s + r.pequeno + r.grande + r.extra_grande + r.jumbo, 0)
     const totalPerdas = (coletas.data || []).reduce((s, r) => s + r.trincados + r.perdas, 0)
-    const totalReceita = (vendas.data || []).reduce((s, v) => s + Number(v.total || 0) + Number(v.frete || 0), 0)
+    const totalReceita = (vendas.data || []).reduce((s, v) => s + calcVendaReceita(v), 0)
     const totalRacao = (racao.data || []).reduce((s, r) => s + Number(r.custo_total || 0), 0)
     const totalCustos = (custos.data || []).reduce((s, c) => s + Number(c.valor || 0), 0)
     const totalMortes = (mortalidade.data || []).reduce((s, r) => s + r.quantidade, 0)
@@ -55,7 +66,7 @@ export default function Relatorio() {
     const clienteMap = {}
     ;(vendas.data || []).forEach(v => {
       const nome = v.clientes?.nome ?? 'Sem cliente'
-      clienteMap[nome] = (clienteMap[nome] || 0) + Number(v.total || 0) + Number(v.frete || 0)
+      clienteMap[nome] = (clienteMap[nome] || 0) + calcVendaReceita(v)
     })
     const topClientes = Object.entries(clienteMap).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([nome, valor]) => ({ nome, valor }))
 
@@ -78,12 +89,12 @@ export default function Relatorio() {
       const ini = `${y}-${m}-01`
       const fim2 = new Date(y, d.getMonth() + 1, 0).toISOString().split('T')[0]
       const [cv, cc, cr, ccu] = await Promise.all([
-        supabase.from('vendas').select('total,frete').gte('data', ini).lte('data', fim2),
+        supabase.from('vendas').select('frete,pequeno,grande,extra_grande,jumbo,tipo_pequeno,tipo_grande,tipo_extra_grande,tipo_jumbo,preco_pequeno,preco_grande,preco_extra_grande,preco_jumbo').gte('data', ini).lte('data', fim2),
         supabase.from('coletas').select('pequeno,grande,extra_grande,jumbo').gte('data', ini).lte('data', fim2),
         supabase.from('racao').select('custo_total').gte('data', ini).lte('data', fim2),
         supabase.from('custos').select('valor').gte('data', ini).lte('data', fim2),
       ])
-      const receita = (cv.data || []).reduce((s, v) => s + Number(v.total || 0) + Number(v.frete || 0), 0)
+      const receita = (cv.data || []).reduce((s, v) => s + calcVendaReceita(v), 0)
       const ovos = (cc.data || []).reduce((s, r) => s + r.pequeno + r.grande + r.extra_grande + r.jumbo, 0)
       const gastos = (cr.data || []).reduce((s, r) => s + Number(r.custo_total || 0), 0) + (ccu.data || []).reduce((s, c) => s + Number(c.valor || 0), 0) + custoFixo
       comp.push({ mes: `${MESES[d.getMonth()]}/${String(y).slice(2)}`, receita, gastos, lucro: receita - gastos, ovos })
@@ -96,14 +107,15 @@ export default function Relatorio() {
     const clienteUltimaCompra = {}
     ;(todasVendas.data || []).forEach(v => {
       const nome = v.clientes?.nome ?? 'Sem cliente'
-      if (!clienteUltimaCompra[nome] || v.data > clienteUltimaCompra[nome]) clienteUltimaCompra[nome] = v.data
+      if (!clienteUltimaCompra[nome] || v.data > clienteUltimaCompra[nome].data)
+        clienteUltimaCompra[nome] = { data: v.data }
     })
     const sumidos = Object.entries(clienteUltimaCompra)
-      .filter(([, data]) => data < limiteStr && data)
-      .sort((a, b) => a[1].localeCompare(b[1]))
-      .map(([nome, data]) => {
-        const dias = Math.floor((new Date() - new Date(data)) / (1000 * 60 * 60 * 24))
-        return { nome, data, dias }
+      .filter(([, v]) => v.data < limiteStr && v.data)
+      .sort((a, b) => a[1].data.localeCompare(b[1].data))
+      .map(([nome, v]) => {
+        const dias = Math.floor((new Date() - new Date(v.data)) / (1000 * 60 * 60 * 24))
+        return { nome, data: v.data, dias }
       })
     setClientesFreq(sumidos)
     setLoading(false)
