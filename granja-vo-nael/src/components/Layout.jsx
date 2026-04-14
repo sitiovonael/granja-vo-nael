@@ -28,6 +28,7 @@ const menuAdmin = [
   { to: '/clientes', icon: Users, label: 'Clientes' },
   { to: '/mortalidade', icon: Skull, label: 'Mortalidade' },
   { to: '/lotes', icon: Bird, label: 'Lotes' },
+  { to: '/preparacao', icon: ClipboardList, label: 'Preparação' },
   { to: '/contas', icon: DollarSign, label: 'Contas a Receber' },
   { to: '/operacional', icon: Wrench, label: 'Operacional' },
   { to: '/relatorio', icon: BarChart2, label: 'Relatório' },
