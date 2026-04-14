@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, Egg, ShoppingCart, Users,
   Skull, Truck, Wheat, LogOut, Menu, X,
-  Bird, BarChart2, DollarSign, Wrench, ClipboardList
+  Bird, BarChart2, DollarSign, Wrench, ClipboardList, UserCog
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -32,6 +32,7 @@ const menuAdmin = [
   { to: '/operacional', icon: Wrench, label: 'Operacional' },
   { to: '/relatorio', icon: BarChart2, label: 'Relatório' },
   { to: '/racao', icon: Wheat, label: 'Ração & Custos' },
+  { to: '/usuarios', icon: UserCog, label: 'Usuários' },
 ]
 
 // Menu lateral FUNCIONÁRIO
