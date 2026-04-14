@@ -66,7 +66,7 @@ export function AuthProvider({ children }) {
 
   async function sendPasswordReset(email) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin,
+      redirectTo: window.location.origin + '/redefinir-senha',
     })
     return { error }
   }
