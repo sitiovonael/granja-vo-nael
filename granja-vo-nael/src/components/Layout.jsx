@@ -3,28 +3,40 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, Egg, ShoppingCart, Users,
   Skull, Truck, Wheat, LogOut, Menu, X,
-  Bird, BarChart2, DollarSign, Wrench
+  Bird, BarChart2, DollarSign, Wrench, ClipboardList
 } from 'lucide-react'
 import { useState } from 'react'
 
-const navItems = [
+// Navegação do ADMIN (bottom bar)
+const navAdmin = [
   { to: '/', icon: LayoutDashboard, label: 'Início', exact: true },
   { to: '/coleta', icon: Egg, label: 'Coleta' },
   { to: '/vendas', icon: ShoppingCart, label: 'Vendas' },
   { to: '/entregas', icon: Truck, label: 'Entregas' },
 ]
 
-const moreItems = [
+// Navegação do FUNCIONÁRIO (bottom bar)
+const navFuncionario = [
+  { to: '/', icon: LayoutDashboard, label: 'Início', exact: true },
+  { to: '/coleta', icon: Egg, label: 'Coleta' },
+  { to: '/mortalidade', icon: Skull, label: 'Mortalidade' },
+  { to: '/preparacao', icon: ClipboardList, label: 'Preparação' },
+]
+
+// Menu lateral ADMIN
+const menuAdmin = [
   { to: '/clientes', icon: Users, label: 'Clientes' },
   { to: '/mortalidade', icon: Skull, label: 'Mortalidade' },
   { to: '/lotes', icon: Bird, label: 'Lotes' },
   { to: '/contas', icon: DollarSign, label: 'Contas a Receber' },
   { to: '/operacional', icon: Wrench, label: 'Operacional' },
   { to: '/relatorio', icon: BarChart2, label: 'Relatório' },
+  { to: '/racao', icon: Wheat, label: 'Ração & Custos' },
 ]
 
-const adminItems = [
-  { to: '/racao', icon: Wheat, label: 'Ração & Custos' },
+// Menu lateral FUNCIONÁRIO
+const menuFuncionario = [
+  { to: '/lotes', icon: Bird, label: 'Lotes' },
 ]
 
 export default function Layout() {
@@ -36,6 +48,9 @@ export default function Layout() {
     await signOut()
     navigate('/login')
   }
+
+  const navItems = isAdmin ? navAdmin : navFuncionario
+  const moreItems = isAdmin ? menuAdmin : menuFuncionario
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -62,7 +77,7 @@ export default function Layout() {
               <button onClick={() => setMenuOpen(false)} className="text-white"><X size={20} /></button>
             </div>
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-              {[...moreItems, ...(isAdmin ? adminItems : [])].map(item => (
+              {moreItems.map(item => (
                 <NavLink key={item.to} to={item.to} onClick={() => setMenuOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition
