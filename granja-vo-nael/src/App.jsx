@@ -13,6 +13,7 @@ import Lote from './pages/Lote'
 import Relatorio from './pages/Relatorio'
 import ContasReceber from './pages/ContasReceber'
 import Operacional from './pages/Operacional'
+import Preparacao from './pages/Preparacao'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -42,14 +43,16 @@ export default function App() {
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="coleta" element={<Coleta />} />
-            <Route path="vendas" element={<Vendas />} />
-            <Route path="clientes" element={<Clientes />} />
             <Route path="mortalidade" element={<Mortalidade />} />
-            <Route path="entregas" element={<Entregas />} />
             <Route path="lotes" element={<Lote />} />
-            <Route path="relatorio" element={<Relatorio />} />
-            <Route path="contas" element={<ContasReceber />} />
-            <Route path="operacional" element={<Operacional />} />
+            <Route path="preparacao" element={<Preparacao />} />
+            {/* Apenas admin */}
+            <Route path="vendas" element={<AdminRoute><Vendas /></AdminRoute>} />
+            <Route path="clientes" element={<AdminRoute><Clientes /></AdminRoute>} />
+            <Route path="entregas" element={<AdminRoute><Entregas /></AdminRoute>} />
+            <Route path="relatorio" element={<AdminRoute><Relatorio /></AdminRoute>} />
+            <Route path="contas" element={<AdminRoute><ContasReceber /></AdminRoute>} />
+            <Route path="operacional" element={<AdminRoute><Operacional /></AdminRoute>} />
             <Route path="racao" element={<AdminRoute><Racao /></AdminRoute>} />
           </Route>
         </Routes>
