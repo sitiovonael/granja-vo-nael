@@ -84,6 +84,16 @@ export default function Lote() {
     await supabase.from('doencas').update({ resolvida: true }).eq('id', id); loadAll()
   }
 
+  async function deleteVacina(id) {
+    if (!confirm('Apagar este registro de vacinação?')) return
+    await supabase.from('vacinacoes').delete().eq('id', id); loadAll()
+  }
+
+  async function deleteDoenca(id) {
+    if (!confirm('Apagar esta ocorrência?')) return
+    await supabase.from('doencas').delete().eq('id', id); loadAll()
+  }
+
   async function toggleAtivo(id, ativo) {
     await supabase.from('lotes').update({ ativo: !ativo }).eq('id', id); loadAll()
   }
@@ -228,12 +238,15 @@ export default function Lote() {
                     <p className="font-semibold text-brand-navy text-sm flex items-center gap-1"><Syringe size={14} className="text-blue-400" />{v.nome_vacina}</p>
                     <p className="text-xs text-gray-400">{v.lotes?.nome} · {new Date(v.data_aplicacao + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                   </div>
-                  {v.proxima_dose && (
-                    <div className="text-right">
-                      <p className="text-xs text-gray-400">Próxima dose</p>
-                      <p className={`text-xs font-semibold ${v.proxima_dose <= today ? 'text-red-600' : 'text-blue-600'}`}>{new Date(v.proxima_dose + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {v.proxima_dose && (
+                      <div className="text-right">
+                        <p className="text-xs text-gray-400">Próxima dose</p>
+                        <p className={`text-xs font-semibold ${v.proxima_dose <= today ? 'text-red-600' : 'text-blue-600'}`}>{new Date(v.proxima_dose + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                      </div>
+                    )}
+                    <button onClick={() => deleteVacina(v.id)} className="text-red-300 hover:text-red-500 p-1"><Trash2 size={15} /></button>
+                  </div>
                 </div>
                 {v.observacoes && <p className="text-xs text-gray-400 mt-1">{v.observacoes}</p>}
               </div>
@@ -276,7 +289,10 @@ export default function Lote() {
                     <p className="font-semibold text-brand-navy text-sm flex items-center gap-1"><Bug size={14} className="text-red-400" />{d.descricao}</p>
                     <p className="text-xs text-gray-400">{d.lotes?.nome} · {new Date(d.data + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-xl font-medium h-fit ${d.resolvida ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{d.resolvida ? 'Resolvida' : 'Em aberto'}</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded-xl font-medium h-fit ${d.resolvida ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{d.resolvida ? 'Resolvida' : 'Em aberto'}</span>
+                    <button onClick={() => deleteDoenca(d.id)} className="text-red-300 hover:text-red-500 p-1"><Trash2 size={15} /></button>
+                  </div>
                 </div>
                 {d.sintomas && <p className="text-xs text-gray-500"><span className="font-medium">Sintomas:</span> {d.sintomas}</p>}
                 {d.tratamento && <p className="text-xs text-gray-500"><span className="font-medium">Tratamento:</span> {d.tratamento}</p>}
