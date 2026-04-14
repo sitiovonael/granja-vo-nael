@@ -19,7 +19,9 @@ export default function Relatorio() {
   async function loadDados() {
     setLoading(true)
     const inicio = `${mes}-01`
-    const fim = new Date(new Date(inicio).getFullYear(), new Date(inicio).getMonth() + 1, 0).toISOString().split('T')[0]
+    // Usa split direto no string do mês para evitar bug de fuso horário (UTC vs local)
+    const [mesY, mesM] = mes.split('-').map(Number)
+    const fim = `${mes}-${String(new Date(mesY, mesM, 0).getDate()).padStart(2, '0')}`
 
     const [coletas, vendas, mortalidade, racao, custos, cfg, todasVendas] = await Promise.all([
       supabase.from('coletas').select('*').gte('data', inicio).lte('data', fim),
@@ -97,12 +99,14 @@ export default function Relatorio() {
     // Comparativo 6 meses
     const comp = []
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(new Date(inicio))
-      d.setMonth(d.getMonth() - i)
-      const y = d.getFullYear()
-      const m = String(d.getMonth() + 1).padStart(2, '0')
+      // Calcular ano/mês sem depender de Date parsing (evita bug de fuso horário)
+      let y = mesY
+      let mNum = mesM - i
+      while (mNum <= 0) { mNum += 12; y-- }
+      while (mNum > 12) { mNum -= 12; y++ }
+      const m = String(mNum).padStart(2, '0')
       const ini = `${y}-${m}-01`
-      const fim2 = new Date(y, d.getMonth() + 1, 0).toISOString().split('T')[0]
+      const fim2 = `${y}-${m}-${String(new Date(y, mNum, 0).getDate()).padStart(2, '0')}`
       const [cv, cc, cr, ccu] = await Promise.all([
         supabase.from('vendas').select('*').gte('data', ini).lte('data', fim2),
         supabase.from('coletas').select('pequeno,grande,extra_grande,jumbo').gte('data', ini).lte('data', fim2),
@@ -112,7 +116,7 @@ export default function Relatorio() {
       const receita = (cv.data || []).reduce((s, v) => s + calcVendaReceita(v), 0)
       const ovos = (cc.data || []).reduce((s, r) => s + r.pequeno + r.grande + r.extra_grande + r.jumbo, 0)
       const gastos = (cr.data || []).reduce((s, r) => s + Number(r.custo_total || 0), 0) + (ccu.data || []).reduce((s, c) => s + Number(c.valor || 0), 0) + custoFixo
-      comp.push({ mes: `${MESES[d.getMonth()]}/${String(y).slice(2)}`, receita, gastos, lucro: receita - gastos, ovos })
+      comp.push({ mes: `${MESES[mNum - 1]}/${String(y).slice(2)}`, receita, gastos, lucro: receita - gastos, ovos })
     }
     setComparativo(comp)
 
