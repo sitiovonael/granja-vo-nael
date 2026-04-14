@@ -15,6 +15,7 @@ import ContasReceber from './pages/ContasReceber'
 import Operacional from './pages/Operacional'
 import Preparacao from './pages/Preparacao'
 import Usuarios from './pages/Usuarios'
+import RedefinirSenha from './pages/RedefinirSenha'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -41,6 +42,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="coleta" element={<Coleta />} />
