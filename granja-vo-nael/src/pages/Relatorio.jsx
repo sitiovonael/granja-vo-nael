@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend, ComposedChart, Area } from 'recharts'
-import { Egg, DollarSign, Skull, ShoppingCart, AlertTriangle } from 'lucide-react'
+import { Egg, DollarSign, Skull, ShoppingCart, AlertTriangle, Share2, Printer } from 'lucide-react'
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
@@ -12,7 +12,6 @@ export default function Relatorio() {
   const [clientesFreq, setClientesFreq] = useState([])
   const [loading, setLoading] = useState(true)
   const [config, setConfig] = useState({ custo_fixo_mensal: 0 })
-  const [debug, setDebug] = useState(null)
 
   useEffect(() => { loadDados() }, [mes])
 
@@ -34,20 +33,6 @@ export default function Relatorio() {
     ])
 
     if (cfg.data) setConfig(cfg.data)
-
-    // DEBUG — remover depois
-    console.log('=== RELATÓRIO DEBUG ===')
-    console.log('periodo:', inicio, 'a', fim)
-    console.log('vendas.data:', vendas.data)
-    console.log('vendas.error:', vendas.error)
-    console.log('coletas.data:', coletas.data)
-    console.log('coletas.error:', coletas.error)
-    setDebug({
-      vendasQtd: vendas.data?.length ?? 'ERRO',
-      vendasErro: vendas.error?.message ?? null,
-      coletasQtd: coletas.data?.length ?? 'ERRO',
-      primVenda: vendas.data?.[0] ? JSON.stringify(vendas.data[0]).slice(0, 200) : null,
-    })
 
     const MULT = { unidade: 1, cartela12: 12, cartela30: 30 }
     const CLASSIFS = ['pequeno', 'grande', 'extra_grande', 'jumbo']
@@ -144,25 +129,54 @@ export default function Relatorio() {
   if (!dados) return null
 
   const CORES = ['#F5A624', '#1E2B5E', '#22c55e', '#8b5cf6']
+  const [_mesY, _mesM] = mes.split('-').map(Number)
+  const mesLabel = `${MESES[_mesM - 1]}/${_mesY}`
+
+  function compartilharWhatsApp() {
+    const sinal = dados.lucro >= 0 ? '+' : ''
+    const top = dados.topClientes.slice(0, 3).map((c, i) => `  ${i + 1}. ${c.nome} — R$ ${c.valor.toFixed(2)}`).join('\n')
+    const texto = [
+      `📊 *Relatório Granja Vô Nael — ${mesLabel}*`,
+      ``,
+      `🥚 Ovos coletados: *${dados.totalOvos}*`,
+      `🛒 Vendas realizadas: *${dados.totalVendas}*`,
+      ``,
+      `💰 Receita: *R$ ${dados.totalReceita.toFixed(2)}*`,
+      `💸 Gastos: *R$ ${dados.totalGastos.toFixed(2)}*`,
+      `📈 Resultado: *${sinal}R$ ${dados.lucro.toFixed(2)}* (${dados.margemLucro.toFixed(1)}%)`,
+      ``,
+      `📦 Custo por ovo: R$ ${dados.custoPorOvo.toFixed(3)}`,
+      `📦 Receita por ovo: R$ ${dados.receitaPorOvo.toFixed(3)}`,
+      dados.totalMortes > 0 ? `💀 Mortes no mês: ${dados.totalMortes}` : null,
+      dados.topClientes.length > 0 ? `\n🏆 *Top clientes:*\n${top}` : null,
+    ].filter(Boolean).join('\n')
+    const url = `https://wa.me/?text=${encodeURIComponent(texto)}`
+    window.open(url, '_blank')
+  }
+
+  function imprimir() {
+    window.print()
+  }
 
   return (
     <div className="p-4 space-y-4">
-      <div>
-        <h1 className="text-brand-navy text-xl font-bold">Relatório</h1>
-        <input type="month" value={mes} onChange={e => setMes(e.target.value)}
-          className="mt-2 border border-gray-300 rounded-xl px-3 py-2 text-sm bg-white" />
-      </div>
-
-      {/* DEBUG TEMPORÁRIO */}
-      {debug && (
-        <div className="bg-yellow-50 border border-yellow-300 rounded-2xl p-3 text-xs space-y-1">
-          <p className="font-bold text-yellow-800">🔍 Debug (temporário)</p>
-          <p>Vendas carregadas: <strong>{debug.vendasQtd}</strong></p>
-          {debug.vendasErro && <p className="text-red-600">Erro vendas: {debug.vendasErro}</p>}
-          <p>Coletas carregadas: <strong>{debug.coletasQtd}</strong></p>
-          {debug.primVenda && <p className="break-all text-gray-500">1ª venda: {debug.primVenda}</p>}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-brand-navy text-xl font-bold">Relatório</h1>
+          <input type="month" value={mes} onChange={e => setMes(e.target.value)}
+            className="mt-2 border border-gray-300 rounded-xl px-3 py-2 text-sm bg-white" />
         </div>
-      )}
+        <div className="flex gap-2 mt-1 print:hidden">
+          <button onClick={imprimir}
+            className="flex items-center gap-1.5 border border-gray-300 text-gray-600 rounded-xl px-3 py-2 text-xs font-medium">
+            <Printer size={14} /> PDF
+          </button>
+          <button onClick={compartilharWhatsApp}
+            className="flex items-center gap-1.5 bg-green-500 text-white rounded-xl px-3 py-2 text-xs font-medium">
+            <Share2 size={14} /> WhatsApp
+          </button>
+        </div>
+      </div>
 
       {/* Resultado */}
       <div className="bg-brand-orange text-white rounded-2xl p-4 col-span-2">
