@@ -112,42 +112,42 @@ export default function Entregas() {
 
       {/* Banner do dia */}
       {filtro === 'hoje' && (
-        <div className="bg-brand-navy rounded-2xl p-4 text-white space-y-3">
-          <div className="flex items-center gap-2">
-            <Calendar size={16} className="text-brand-orange" />
-            <p className="font-semibold text-sm">Hoje — {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}</p>
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar size={15} className="text-brand-orange" />
+              <p className="font-semibold text-brand-navy text-sm">Hoje — {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}</p>
+            </div>
+            <button onClick={enviarWhatsApp}
+              className="bg-green-500 hover:bg-green-600 text-white rounded-xl px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium transition">
+              <MessageCircle size={14} />
+              WhatsApp
+              {hojeAtivas.length > 0 && (
+                <span className="bg-white/30 rounded-full px-1.5 py-0.5 text-xs">{hojeAtivas.length}</span>
+              )}
+            </button>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-yellow-500/20 rounded-xl p-2 text-center">
-              <p className="text-yellow-300 text-xs font-medium">Pendentes</p>
-              <p className="text-white font-bold text-xl">{hoje_pendentes}</p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-2 text-center">
+              <p className="text-yellow-600 text-xs font-medium">Pendentes</p>
+              <p className="text-brand-navy font-bold text-xl">{hoje_pendentes}</p>
             </div>
-            <div className="bg-blue-500/20 rounded-xl p-2 text-center">
-              <p className="text-blue-300 text-xs font-medium">Em Rota</p>
-              <p className="text-white font-bold text-xl">{hoje_em_rota}</p>
+            <div className="bg-blue-100 border border-blue-200 rounded-xl p-2 text-center">
+              <p className="text-blue-600 text-xs font-medium">Em Rota</p>
+              <p className="text-brand-navy font-bold text-xl">{hoje_em_rota}</p>
             </div>
-            <div className="bg-green-500/20 rounded-xl p-2 text-center">
-              <p className="text-green-300 text-xs font-medium">Entregues</p>
-              <p className="text-white font-bold text-xl">{hoje_entregues}</p>
+            <div className="bg-green-50 border border-green-200 rounded-xl p-2 text-center">
+              <p className="text-green-600 text-xs font-medium">Entregues</p>
+              <p className="text-brand-navy font-bold text-xl">{hoje_entregues}</p>
             </div>
           </div>
 
           {totalHoje > 0 && (
-            <p className="text-xs text-gray-300 text-center">
-              Total do dia: <span className="text-brand-orange font-bold text-sm">R$ {totalHoje.toFixed(2)}</span>
+            <p className="text-xs text-gray-500 text-center">
+              Total do dia: <span className="text-green-600 font-bold">R$ {totalHoje.toFixed(2)}</span>
             </p>
           )}
-
-          {/* Botão WhatsApp destacado */}
-          <button onClick={enviarWhatsApp}
-            className="w-full bg-green-500 hover:bg-green-600 text-white rounded-xl py-3 flex items-center justify-center gap-2 font-semibold text-sm transition">
-            <MessageCircle size={18} />
-            Enviar resumo para Carlos no WhatsApp
-            {hojeAtivas.length > 0 && (
-              <span className="bg-white/20 rounded-full px-2 py-0.5 text-xs">{hojeAtivas.length}</span>
-            )}
-          </button>
         </div>
       )}
 
