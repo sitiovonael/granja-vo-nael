@@ -58,7 +58,7 @@ export default function Layout() {
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <header className="bg-brand-navy text-white px-4 py-3 flex items-center justify-between sticky top-0 z-40 shadow-md">
         <div className="flex items-center gap-2">
-          <img src="/logo192.png" alt="Logo" className="w-8 h-8 rounded-full object-cover" />
+          <img src="/logo192.png" alt="Logo" className="h-8 w-auto" />
           <span className="font-bold text-sm">Granja Vô Nael</span>
         </div>
         <div className="flex items-center gap-3">
