@@ -78,7 +78,7 @@ export default function Login() {
     return (
       <div className="min-h-screen bg-brand-navy flex flex-col items-center justify-center px-6">
         <div className="mb-6 text-center">
-          <img src="/logo.png" alt="Granja Vô Nael" className="h-20 w-auto mx-auto mb-3 drop-shadow-lg" />
+          <img src="/Logo.png" alt="Granja Vô Nael" className="h-20 w-auto mx-auto mb-3 drop-shadow-lg" />
           <h1 className="text-white text-xl font-bold">Granja Vô Nael</h1>
         </div>
 
@@ -146,7 +146,7 @@ export default function Login() {
     return (
       <div className="min-h-screen bg-brand-navy flex flex-col items-center justify-center px-6">
         <div className="mb-6 text-center">
-          <img src="/logo.png" alt="Granja Vô Nael" className="h-20 w-auto mx-auto mb-3 drop-shadow-lg" />
+          <img src="/Logo.png" alt="Granja Vô Nael" className="h-20 w-auto mx-auto mb-3 drop-shadow-lg" />
           <h1 className="text-white text-xl font-bold">Granja Vô Nael</h1>
         </div>
 
@@ -207,7 +207,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-brand-navy flex flex-col items-center justify-center px-6">
       <div className="mb-8 text-center">
-        <img src="/logo.png" alt="Granja Vô Nael" className="h-36 w-auto mx-auto mb-4 drop-shadow-lg" />
+        <img src="/Logo.png" alt="Granja Vô Nael" className="h-36 w-auto mx-auto mb-4 drop-shadow-lg" />
       </div>
 
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6">
