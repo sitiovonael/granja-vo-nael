@@ -78,7 +78,7 @@ export default function Login() {
     return (
       <div className="min-h-screen bg-brand-navy flex flex-col items-center justify-center px-6">
         <div className="mb-6 text-center">
-          <img src="/logo192.png" alt="Granja Vô Nael" className="w-20 h-20 rounded-full mx-auto mb-3 shadow-lg object-cover" />
+          <img src="/logo192.png" alt="Granja Vô Nael" className="h-20 w-auto mx-auto mb-3 drop-shadow-lg" />
           <h1 className="text-white text-xl font-bold">Granja Vô Nael</h1>
         </div>
 
@@ -146,7 +146,7 @@ export default function Login() {
     return (
       <div className="min-h-screen bg-brand-navy flex flex-col items-center justify-center px-6">
         <div className="mb-6 text-center">
-          <img src="/logo192.png" alt="Granja Vô Nael" className="w-20 h-20 rounded-full mx-auto mb-3 shadow-lg object-cover" />
+          <img src="/logo192.png" alt="Granja Vô Nael" className="h-20 w-auto mx-auto mb-3 drop-shadow-lg" />
           <h1 className="text-white text-xl font-bold">Granja Vô Nael</h1>
         </div>
 
@@ -207,7 +207,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-brand-navy flex flex-col items-center justify-center px-6">
       <div className="mb-8 text-center">
-        <img src="/logo192.png" alt="Granja Vô Nael" className="w-28 h-28 rounded-full mx-auto mb-4 shadow-lg object-cover" />
+        <img src="/logo192.png" alt="Granja Vô Nael" className="h-28 w-auto mx-auto mb-4 drop-shadow-lg" />
         <h1 className="text-white text-2xl font-bold tracking-wide">Granja Vô Nael</h1>
         <p className="text-brand-orange text-sm mt-1">Galinha Caipira</p>
       </div>
