@@ -27,9 +27,9 @@ export default defineConfig({
         display: 'standalone',
         start_url: '/',
         icons: [
-          { src: '/logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: '/logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+          { src: '/Logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/Logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/Logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       }
     })
